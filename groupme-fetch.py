@@ -70,7 +70,7 @@ oldestId" to continue fetching the past).]
         'Accept-Language': 'en-US',
         'Content-Type': 'application/json',
         'Origin': 'https://web.groupme.com',
-        'Referer': 'https://web.groupme.com/groups/2945437',
+        'Referer': 'https://web.groupme.com/groups/' + group,
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.45 Safari/537.22',
         'X-Access-Token': accessToken
     }
