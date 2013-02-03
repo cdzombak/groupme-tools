@@ -22,7 +22,7 @@ Again, in GroupMe's web interface, the group ID is the numeric ID included in th
 
 ## Requirements/Dependencies/Python
 
-This was written and tested on Python 2.7, because I didn't want to watse time getting my [Homebrew](https://github.com/mxcl/homebrew/wiki/Homebrew-and-Python) installation to install things for Python 3. I suspect this script will break if you run it with Python 3, because Unicode.
+This was written and tested on Python 2.7, because I didn't want to waste time getting my [Homebrew](https://github.com/mxcl/homebrew/wiki/Homebrew-and-Python) installation to install things for Python 3. I suspect this script will break if you run it with Python 3, because Unicode.
 
 The only other dependency is [Requests](http://docs.python-requests.org/en/latest/). `pip install requests`. At the time of writing, the current version was 1.1.0.
 
