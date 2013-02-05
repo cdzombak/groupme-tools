@@ -33,3 +33,9 @@ The only other dependency is [Requests](http://docs.python-requests.org/en/lates
 ## Stress testing/performance
 
 These tools have been tested with a transcript containing ~16,000 messages on a 1.7GHz/4GB Macbook Air. It works fine.
+
+## Keep your transcript up to date
+
+(After your initial fetch with `groupme-fetch.py`, optionally using the `oldest` option to fetch older history. You should have a complete transcript up to the last time you fetched. Then...)
+
+`python groupme-fetch.py GROUPID ACCESSTOKEN newest $(python newest-id.py transcript-GROUPID.json)`
