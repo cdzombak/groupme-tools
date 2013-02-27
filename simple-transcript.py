@@ -5,6 +5,7 @@ sys.setdefaultencoding("utf-8")
 import json
 import datetime
 
+
 def printTranscript(messages):
     """Prints a readable "transcript" from the given list of messages.
 
@@ -17,7 +18,7 @@ def printTranscript(messages):
 
         # text is None for a photo message
         if message[u'text'] is not None:
-            text =  message[u'text']
+            text = message[u'text']
         else:
             text = "(no text)"
 
@@ -48,8 +49,8 @@ Times displayed in local timezone.
     """
 
     if len(sys.argv) < 2:
-       print(main.__doc__)
-       sys.exit(1)
+        print(main.__doc__)
+        sys.exit(1)
 
     transcriptFile = open(sys.argv[1])
     transcript = json.load(transcriptFile)

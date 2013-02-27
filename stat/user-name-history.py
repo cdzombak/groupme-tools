@@ -16,8 +16,8 @@ Assumes filename.json is a JSON GroupMe transcript.
     """
 
     if len(sys.argv) < 2:
-       print(main.__doc__)
-       sys.exit(1)
+        print(main.__doc__)
+        sys.exit(1)
 
     transcriptFile = open(sys.argv[1])
     transcript = json.load(transcriptFile)
@@ -43,4 +43,3 @@ Assumes filename.json is a JSON GroupMe transcript.
 if __name__ == '__main__':
     main()
     sys.exit(0)
-

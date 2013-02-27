@@ -6,6 +6,7 @@ import requests
 import time
 import json
 
+
 def onRequestError(request):
     print(request.status_code)
     print(request.headers)
@@ -42,8 +43,8 @@ oldestId" to continue fetching the past).]
     """
 
     if len(sys.argv) is not 3 and len(sys.argv) is not 5:
-       print(main.__doc__)
-       sys.exit(1)
+        print(main.__doc__)
+        sys.exit(1)
 
     beforeId = None
     stopId = None
@@ -80,9 +81,9 @@ oldestId" to continue fetching the past).]
         transcriptFile = open(transcriptFileName)
         transcript = json.load(transcriptFile)
         transcriptFile.close()
-    except IOError: # ignore FileNotFound, since that's a valid case for this tool
+    except IOError:  # ignore FileNotFound, since that's a valid case for this tool
         transcript = []
-    except ValueError: # handle JSON parsing or empty-file error
+    except ValueError:  # handle JSON parsing or empty-file error
         transcript = []
         transcriptFile.close()
 
@@ -91,7 +92,7 @@ oldestId" to continue fetching the past).]
         print('starting on page ' + str(pageCount))
 
         if beforeId is not None:
-            params = { 'before_id': beforeId }
+            params = {'before_id': beforeId}
         else:
             params = {}
         r = requests.get(endpoint, params=params, headers=headers)
@@ -103,7 +104,7 @@ oldestId" to continue fetching the past).]
         messages = response[u'response'][u'messages']
 
         if stopId is not None:
-            messages = sorted(messages, key=lambda k:k[u'created_at'], reverse=True)
+            messages = sorted(messages, key=lambda k: k[u'created_at'], reverse=True)
             for message in messages:
                 if message[u'id'] == stopId:
                     complete = True
@@ -122,7 +123,7 @@ oldestId" to continue fetching the past).]
         beforeId = messages[-1][u'id']
 
     # sort transcript in chronological order
-    transcript = sorted(transcript, key=lambda k:k[u'created_at'])
+    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
 
     transcriptFile = open(transcriptFileName, 'w+')
     json.dump(transcript, transcriptFile, ensure_ascii=False)
