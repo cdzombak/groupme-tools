@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Streamgraph</title>
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 100%;
+}
+
+button {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+</style>
+<button onclick="transition()">Update</button>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<!-- http://bl.ocks.org/mbostock/4060954 -->
+<script>
+
+var width = document.body.clientWidth,
+    height = 500;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.linear()
+    .range(["#aad", "#556"]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+
+d3.json('transcript-4218561.json', function(error, rawdata) {
+  // first get dates
+
+  rawdata = rawdata.slice(0, 300);
+
+  // rawdata.split('\n').forEach(function(d) {
+  rawdata.forEach(function(d) {
+    d.date = new Date(new Date(d.created_at*1000).toDateString());
+  });
+
+  // get range
+  
+  
+  // x.domain([d3.min(rawdata, function(d) { return d.date }), new Date()]);
+  x.domain(d3.extent(rawdata, function(d) { return d.date; }));
+  // x.domain([new Date(""), new Date("Sat Aug 16 2014")]);
+  y.domain([0, 100]);
+  console.log(x.domain());
+
+
+  // then nest
+  var nest = d3.nest()
+      .key(function(d) { return d.name; })
+      .key(function(d) { return d.date.toDateString(); })
+      .entries(rawdata);
+  // don't need groupme      
+  nest = nest.slice(1, nest.length);
+  
+
+  // ndata = []
+  nest.forEach(function(person) {
+    for(var d = x.domain()[0]; d <= x.domain()[1]; d.setDate(d.getDate() + 1)) {
+      // person talked on this day?
+      var hasDate = false;
+      person.values.forEach(function(pd) {
+        if(pd.key == d.toDateString()) {
+          hasDate = true;
+          // anyway to break out?
+        }
+      });
+      // if not add in empty
+      if(!hasDate) {
+        var empty = Object();
+        empty.key = d.toDateString();
+        empty.values = [];
+        empty.pushed = true;
+        person.values.push(empty);
+      }
+    }
+  });
+
+  nest = nest.slice(1, 5);
+  
+  var stack = d3.layout.stack().offset("zero")
+      .x(function(d) { return new Date(d.key).getDate(); })
+      .y(function(d) { return d.values.length; })
+      .values(function(d) { return d.values; })
+  
+  var layers = stack(nest);
+
+  layers = layers.slice(0, 1);
+  var kjk = Object();
+
+  console.log(layers[0].values[111]);
+  
+  console.log(layers);
+  var area = d3.svg.area()
+      .interpolate("basis") 
+      .x(function(d) { return x(new Date(d.key)); })
+      .y0(function(d) { return y(d.y0); })
+      .y1(function(d) { return y(d.y0 + d.y); });
+  
+  // svg.append("path")
+  //     .attr("class", "layer")
+  //     .attr("d", area(layers[0].values))
+  //     .style("fill", function() { return color(Math.random()); });
+  svg.selectAll(".layers")
+      .data(layers)
+    .enter().append("path")
+      .attr("class", "layer")
+      .attr("d", function(d) {return area(d.values); })
+      .style("fill", function() { return color(Math.random()); });
+
+});
+
+
+
+function transition() {
+  d3.selectAll("path")
+      .data(function() {
+        var d = layers1;
+        layers1 = layers0;
+        return layers0 = d;
+      })
+    .transition()
+      .duration(2500)
+      .attr("d", area);
+}
+
+
+
+
+</script>
