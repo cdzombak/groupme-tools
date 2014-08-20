@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>Streamgraph</title>
+<title>Groupme Analysis</title>
 <style>
 
 body {
@@ -19,14 +19,18 @@ body {
   shape-rendering: crispEdges;
 }
 
-
 </style>
+
 <body>
   
 </body>
 <script src="d3.v3.min.js"></script>
 <!-- http://bl.ocks.org/mbostock/4060954 -->
 <script>
+// CHANGE THIS TO TRANSCRIPT YOU WISH TO ANALYZE
+// you have to rename the transcript to .html if you want it to be shown on github pages
+var TRANSCRIPT = 'transcript-421856.html1';
+
 
 var width = document.body.clientWidth;
     height = document.body.clientHeight;
@@ -38,7 +42,6 @@ var y = d3.scale.linear()
     .range([width, 0]);
 
 var color = d3.scale.linear()
-    // .range(["#aad", "#556"]);
     .range(["#FF6347", "#40E0D0"]);
 
 var svg = d3.select("body").append("svg")
@@ -72,8 +75,9 @@ var tooltip = d3.select("body")
 
 
 
-// d3.json('transcript-8776104.json', function(error, rawdata) {
-d3.json('transcript-4218561.html', function(error, rawdata) {
+// d3.json('transcript-8776104.json', function(error, rawdata) { 
+// d3.json('transcript-4218561'.html', function(error, rawdata) { 
+d3.json(TRANSCRIPT, function(error, rawdata) {
   // only analyze part of data
   // rawdata = rawdata.slice(0, 200);
   
@@ -98,7 +102,7 @@ d3.json('transcript-4218561.html', function(error, rawdata) {
       .key(function(d) { return d.name; })
       .key(function(d) { return d.date.toDateString(); })
       .entries(rawdata);
-  // don't need groupme      
+  // don't need groupme transcript which is the first one
   // nest = nest.slice(1, nest.length);
   
 
@@ -188,38 +192,6 @@ d3.json('transcript-4218561.html', function(error, rawdata) {
   svg.select(".xaxis")
       .transition().duration(500)
       .call(xAxis);
-  
-  // fix theres a duplicate point to bottom left corner
-  // how you tried to fix it
-
-
-  // remove those duplicate things in svg????
-  // var elements = document.getElementsByClassName("layer");
-  // for(var i=0;i < elements.length; i++) {
-  //   var pathd = elements.item(i).getAttribute("d");
-  //   var match = pathd.match(/(L[0-9\.]+,[0-9\.]+).+\1/)[0];
-  //   elements.item(i).setAttribute("d", pathd.replace(match, ""));
-  // }
-  
-  // var myarea = function(array) {
-  //   var results = "M" + 0 + ", " + height;
-
-  //   for(var i=0;i < array.length;i++) {
-  //     var d = array[i];
-  //     var point = "L" + x(new Date(d.key)) + "," + y(d.y0 + d.y);
-  //     console.log(d.key + " " + (d.y0 + d.y) + " " + point);
-  //     // console.log(point);
-  //     results += point;
-  //   }
-
-  //   // now go reverse and fill in the opposite side
-  //   for(var i=array.length - 1;i >= 0;i--) {
-  //     var d = array[i];
-  //     results += "L" + x(new Date(d.key)) + "," + y(d.y0);
-  //   }
-
-  //   return results + "Z";
-  // }
 
   svg.selectAll(".layer")
     .attr("opacity", 1)
@@ -272,22 +244,5 @@ d3.json('transcript-4218561.html', function(error, rawdata) {
       .classed("hover", false)
       .attr("stroke-width", "0px"), tooltip.html(defaulttext);
     });});
-
-
-
-function transition() {
-  d3.selectAll("path")
-      .data(function() {
-        var d = layers1;
-        layers1 = layers0;
-        return layers0 = d;
-      })
-    .transition()
-      .duration(2500)
-      .attr("d", area);
-}
-
-
-
 
 </script>
