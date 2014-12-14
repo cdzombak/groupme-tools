@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Groupme Analysis</title>
+<style>
+
+body {
+  /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  font: 11px sans-serif;
+  position: relative;
+  width: 100%;
+  height: 3000px;
+}
+
+.xaxis path,
+.xaxis line {
+  stroke-width: 1px;
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+</style>
+
+<body>
+  
+</body>
+<script src="d3.v3.min.js"></script>
+<!-- http://bl.ocks.org/mbostock/4060954 -->
+<script>
+// CHANGE THIS TO TRANSCRIPT YOU WISH TO ANALYZE
+// you have to rename the transcript to .html if you want it to be shown on github pages
+var TRANSCRIPT = 'transcript-4218561.html';
+
+
+var width = document.body.clientWidth;
+    height = document.body.clientHeight;
+
+var x = d3.time.scale()
+    .range([0, height - 50]);
+
+var y = d3.scale.linear()
+    .range([width, 0]);
+
+var color = d3.scale.linear()
+    .range(["#FF6347", "#40E0D0"]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+var xAxis = d3.svg.axis()
+    .orient("right")
+    .scale(x);
+
+
+svg.append("g")
+    .attr("class", "xaxis")   // give it a class so it can be used to select only xaxis labels  below
+    .attr("transform", "translate(0,0)")
+    .call(xAxis);
+
+var defaulttext = "<p>No one selected<br>Try mousing over the graph</p>"
+
+var tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "remove")
+    .style("position", "absolute")
+    .style("z-index", "19")
+    .style("top", "0")
+    .style("left", "100px")
+    .style("margin-top", "0px")
+    .style("position", "fixed")
+    .style("width", "500px")
+    .html(defaulttext);
+
+
+
+// d3.json('transcript-8776104.json', function(error, rawdata) { 
+// d3.json('transcript-4218561'.html', function(error, rawdata) { 
+d3.json(TRANSCRIPT, function(error, rawdata) {
+  // only analyze part of data
+  // rawdata = rawdata.slice(0, 200);
+  
+  // first get dates
+  // rawdata.split('\n').forEach(function(d) {
+  rawdata.forEach(function(d) {
+    d.date = new Date(new Date(d.created_at*1000).toDateString());
+  });
+
+  
+  
+  // get range
+  // x.domain([d3.min(rawdata, function(d) { return d.date }), new Date()]);
+  x.domain(d3.extent(rawdata, function(d) { return d.date; }));
+  // you don't actually have this data until later
+  // y.domain([0, 100]);
+  console.log(x.domain());
+
+
+  // then nest
+  var nest = d3.nest()
+      .key(function(d) { return d.name; })
+      .key(function(d) { return d.date.toDateString(); })
+      .entries(rawdata);
+  // don't need groupme transcript which is the first one
+  // nest = nest.slice(1, nest.length);
+  
+
+  // ndata = []
+  nest.forEach(function(person) {
+    for(var d = x.domain()[0]; d <= x.domain()[1]; d.setDate(d.getDate() + 1)) {
+      // person talked on this day?
+      var hasDate = false;
+      person.values.forEach(function(pd) {
+        if(pd.key == d.toDateString()) {
+          hasDate = true;
+          // anyway to break out?
+        }
+      });
+      // if not add in empty
+      if(!hasDate) {
+        var empty = Object();
+        empty.key = d.toDateString();
+        empty.values = [];
+        empty.pushed = true;
+        person.values.push(empty);
+      }
+    }
+  });
+  // sort each layers values so it doesn't fuck up
+  nest.forEach(function(layer) {
+    layer.values.sort(function(a, b){
+      return new Date(a.key) - new Date(b.key);
+    });
+  });
+
+  
+
+  
+  // incase you want to limit the people you're analyzing
+  // nest = nest.slice(0, 3);
+  console.log(nest);
+
+
+
+  // GRAPH THE DATA
+  var stack = d3.layout.stack().offset("wiggle")
+  // var stack = d3.layout.stack().offset("silhouette")
+      .x(function(d) { return new Date(d.key); })
+      .y(function(d) { return d.values.length; })
+      .values(function(d) { return d.values; })
+
+  var layers = stack(nest);
+  
+  // you don't actually have this data until you stack it
+  var maxh = 0;
+  // all the layers are the same length. or should be.....
+  for(var i=0;i < layers[0].values.length;i++) {
+    var total = 0;
+    layers.forEach(function(person) {
+      total += person.values[i].values.length;
+    });
+
+    if(total > maxh) {
+      maxh = total;
+    }
+  }
+
+  y.domain([0, maxh + 40]);
+  // should be number of dates
+  xAxis.ticks(layers[0].values.length / 7);
+
+  
+  
+  var area = d3.svg.area()
+      .interpolate("basis") 
+      .x(function(d) { return x(new Date(d.key)); })
+      .y0(function(d) { return y(d.y0); })
+      .y1(function(d) { return y(d.y0 + d.y); });
+
+  svg.selectAll(".layers")
+      .data(layers)
+    .enter().append("path")
+      .attr("class", "layer")
+      .attr("transform", "translate(" + (width) +", 0) rotate(90)")
+      .attr("id", function(d) { return d.key; })
+      .attr("d", function(d) { return area(d.values); })
+      .style("fill", function(d, i) { return color(i * 1.0/layers.length); })
+      .style("z-index", "21");
+      // .style("fill", function(d, i) { return color(Math.random()); });
+  
+  svg.select(".xaxis")
+      .transition().duration(500)
+      .call(xAxis);
+
+  svg.selectAll(".layer")
+    .attr("opacity", 1)
+    .on("mouseover", function(d, i) {
+      svg.selectAll(".layer").transition()
+      .duration(250)
+      .attr("opacity", function(d, j) {
+        return j != i ? 0.6 : 1;
+    })})
+
+
+    .on("mousemove", function(d, i) {
+      mousex = d3.mouse(this);
+      mousex = mousex[0];
+      var invertedx = x.invert(mousex);
+      
+      var messages = d.values.filter(function(d) {
+        return d.key == invertedx.toDateString();
+      })[0];
+      
+      var messagetext = "";
+      for(var i=0;i < messages.values.length;i++) {
+        if(i > 10) {
+          messagetext += "<br>capped to 10 messages.<br>...";
+          break;
+        }
+
+        messagetext += "> " + messages.values[i].text + "<br>";
+      }
+      // console.log(messages);
+
+
+
+      d3.select(this)
+      .classed("hover", true)
+      .attr("stroke", "#fff")
+      .attr("stroke-width", "0.5px"), 
+      tooltip.html( "<p><b>" + d.key + "</b><br>" + 
+                    invertedx.toDateString() + "<br>" + 
+                    messages.values.length +" messages sent today" + "<br><br>" + "</p>" +
+                    "<p>" + messagetext + "</p>" );
+      
+    })
+    .on("mouseout", function(d, i) {
+     svg.selectAll(".layer")
+      .transition()
+      .duration(250)
+      .attr("opacity", "1");
+      d3.select(this)
+      .classed("hover", false)
+      .attr("stroke-width", "0px"), tooltip.html(defaulttext);
+    });});
+
+</script>
