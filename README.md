@@ -36,6 +36,8 @@ These tools have been tested with a transcript containing ~16,000 messages on a 
 
 ## Keep your transcript up to date
 
-(After your initial fetch with `groupme-fetch.py`, optionally using the `oldest` option to fetch older history. You should have a complete transcript up to the last time you fetched. Then...)
+After your initial fetch with `groupme-fetch.py`, optionally using the `oldest` option to fetch older history. You should have a complete transcript up to the last time you fetched. Then...
+
+Note the `oldest` or `newest` parameters are message IDs from your transcript JSON file.
 
 `python groupme-fetch.py GROUPID ACCESSTOKEN newest $(python newest-id.py transcript-GROUPID.json)`
