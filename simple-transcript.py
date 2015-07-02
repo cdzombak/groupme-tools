@@ -37,7 +37,8 @@ def printTranscript(messages):
         else:
             pic = ''
 
-        print(system_padded + name + ' (' + time + ')' + favorites_padded + ': ' + text + pic)
+        string = system_padded + name + ' (' + time + ')' + favorites_padded + ': ' + text + pic
+        print(string.encode(sys.stdout.encoding, errors='replace'))
 
 
 def main():
