@@ -60,6 +60,21 @@ def main():
     pages = args.pages
 
     transcriptFileName = 'transcript-{0}.json'.format(group)
+    transcript = loadTranscript(transcriptFileName)
+    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
+
+    # sort transcript in chronological order
+    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
+
+    transcriptFile = open(transcriptFileName, 'w+')
+    json.dump(transcript, transcriptFile, ensure_ascii=False)
+    transcriptFile.close()
+
+
+def loadTranscript(transcriptFileName):
+    """
+    Load a transcript file by name
+    """
     try:
         transcriptFile = open(transcriptFileName)
         transcript = json.load(transcriptFile)
@@ -69,15 +84,7 @@ def main():
     except ValueError:  # handle JSON parsing or empty-file error
         transcript = []
         transcriptFile.close()
-
-    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
-
-    # sort transcript in chronological order
-    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
-
-    transcriptFile = open(transcriptFileName, 'w+')
-    json.dump(transcript, transcriptFile, ensure_ascii=False)
-    transcriptFile.close()
+    return transcript
 
 
 def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLimit=None):
@@ -95,7 +102,7 @@ def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLim
         'X-Access-Token': accessToken
     }
 
-    tempFileName = 'temp-transcript-{0}.json'.format(group)
+    tempFileName = getTempFileName(group)
     with open(tempFileName, 'wb') as tempFile:
         while not complete:
             pageCount = pageCount + 1
@@ -138,6 +145,11 @@ def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLim
             beforeId = messages[-1][u'id']
 
     return transcript
+
+
+def getTempFileName(group):
+    return 'temp-transcript-{0}.json'.format(group)
+
 
 if __name__ == '__main__':
     main()
