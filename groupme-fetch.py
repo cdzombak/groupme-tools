@@ -15,31 +15,32 @@ def onRequestError(request):
 
 
 def main():
-    """Usage: groupme-fetch.py groupId accessToken [oldest oldestId]|[newest newestId]
+    """
+    Usage: groupme-fetch.py groupId accessToken [oldest oldestId]|[newest newestId]
 
-Writes out "transcript-groupId.json" with the history of the group
-in chronological order.
+    Writes out "transcript-groupId.json" with the history of the group
+    in chronological order.
 
-If a file by that name is found, we'll go ahead and update that
-scrape depending on the options you provide. It is assumed that the
-file is in the correct format *and its messages are in chronological
-order*.
+    If a file by that name is found, we'll go ahead and update that
+    scrape depending on the options you provide. It is assumed that the
+    file is in the correct format *and its messages are in chronological
+    order*.
 
-Options for updating/continuing a scrape:
+    Options for updating/continuing a scrape:
 
-[If neither of these options is provided, we scrape from the present
-until the job is finished (or interrupted in which case, use "oldest
-oldestId" to continue fetching the past).]
+    [If neither of these options is provided, we scrape from the present
+    until the job is finished (or interrupted in which case, use "oldest
+    oldestId" to continue fetching the past).]
 
- - If "oldest oldestId" is provided, oldestId is assumed to be the ID
-   of the oldest (topmost) message in the existing transcript file.
-   Messages older than it will be retrieved and added at the top of
-   the file, in order.
+     - If "oldest oldestId" is provided, oldestId is assumed to be the ID
+       of the oldest (topmost) message in the existing transcript file.
+       Messages older than it will be retrieved and added at the top of
+       the file, in order.
 
- - If "newest newestId" is provided, newestId is assumed to be the ID
-   of the newest (bottom-most) message in the existing transcript file.
-   Messages newer than it will be retrieved and added at the bottom
-   of the file, in order.
+     - If "newest newestId" is provided, newestId is assumed to be the ID
+       of the newest (bottom-most) message in the existing transcript file.
+       Messages newer than it will be retrieved and added at the bottom
+       of the file, in order.
     """
 
     if len(sys.argv) is not 3 and len(sys.argv) is not 5:
