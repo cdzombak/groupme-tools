@@ -77,7 +77,7 @@ def main():
         'X-Access-Token': accessToken
     }
 
-    transcriptFileName = 'transcript-' + group + '.json'
+    transcriptFileName = 'transcript-{0}.json'.format(group)
     try:
         transcriptFile = open(transcriptFileName)
         transcript = json.load(transcriptFile)
