@@ -62,6 +62,28 @@ def main():
     group = sys.argv[1]
     accessToken = sys.argv[2]
 
+    transcriptFileName = 'transcript-{0}.json'.format(group)
+    try:
+        transcriptFile = open(transcriptFileName)
+        transcript = json.load(transcriptFile)
+        transcriptFile.close()
+    except IOError:  # ignore FileNotFound, since that's a valid case for this tool
+        transcript = []
+    except ValueError:  # handle JSON parsing or empty-file error
+        transcript = []
+        transcriptFile.close()
+
+    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId)
+
+    # sort transcript in chronological order
+    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
+
+    transcriptFile = open(transcriptFileName, 'w+')
+    json.dump(transcript, transcriptFile, ensure_ascii=False)
+    transcriptFile.close()
+
+
+def populateTranscript(group, accessToken, transcript, beforeId, stopId):
     complete = False
     pageCount = 0
 
@@ -77,16 +99,6 @@ def main():
         'X-Access-Token': accessToken
     }
 
-    transcriptFileName = 'transcript-{0}.json'.format(group)
-    try:
-        transcriptFile = open(transcriptFileName)
-        transcript = json.load(transcriptFile)
-        transcriptFile.close()
-    except IOError:  # ignore FileNotFound, since that's a valid case for this tool
-        transcript = []
-    except ValueError:  # handle JSON parsing or empty-file error
-        transcript = []
-        transcriptFile.close()
 
     while not complete:
         pageCount = pageCount + 1
@@ -122,14 +134,7 @@ def main():
 
         # keep working back in time
         beforeId = messages[-1][u'id']
-
-    # sort transcript in chronological order
-    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
-
-    transcriptFile = open(transcriptFileName, 'w+')
-    json.dump(transcript, transcriptFile, ensure_ascii=False)
-    transcriptFile.close()
-
+    return transcript
 
 if __name__ == '__main__':
     main()
