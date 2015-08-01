@@ -1,4 +1,5 @@
 import sys
+import argparse
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -42,25 +43,17 @@ def main():
        Messages newer than it will be retrieved and added at the bottom
        of the file, in order.
     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('group')
+    parser.add_argument('accessToken')
+    parser.add_argument("--oldest", help="The ID of the oldest (topmost) message in the existing transcript file")
+    parser.add_argument("--newest", help="The ID of the newest (bottom-most) message in the existing transcript file")
+    args = parser.parse_args()
 
-    if len(sys.argv) is not 3 and len(sys.argv) is not 5:
-        print(main.__doc__)
-        sys.exit(1)
-
-    beforeId = None
-    stopId = None
-
-    if len(sys.argv) is 5:
-        if sys.argv[3] == 'oldest':
-            beforeId = sys.argv[4]
-        elif sys.argv[3] == 'newest':
-            stopId = sys.argv[4]
-        else:
-            print(main.__doc__)
-            sys.exit(1)
-
-    group = sys.argv[1]
-    accessToken = sys.argv[2]
+    group = args.group
+    accessToken = args.group
+    beforeId = args.oldest
+    stopId = args.newest
 
     transcriptFileName = 'transcript-{0}.json'.format(group)
     try:
