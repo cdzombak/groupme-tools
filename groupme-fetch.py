@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -46,6 +47,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('group')
     parser.add_argument('accessToken')
+    parser.add_argument("--resume", action='store_true', default=False, help="Resume based on the last found files.")
     parser.add_argument("--oldest", help="The ID of the oldest (topmost) message in the existing transcript file")
     parser.add_argument("--newest", help="The ID of the newest (bottom-most) message in the existing transcript file")
     parser.add_argument("--pages", type=int,
@@ -61,6 +63,14 @@ def main():
 
     transcriptFileName = 'transcript-{0}.json'.format(group)
     transcript = loadTranscript(transcriptFileName)
+    if args.resume:
+        tempFileName = getTempFileName(group)
+        tempTranscript = loadTempTranscript(tempFileName)
+        transcript = sorted(reconcileTranscripts(transcript, tempTranscript),
+                            key=lambda k: k[u'created_at'])
+        if transcript:
+            beforeId = transcript[0]['id']
+
     transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
 
     # sort transcript in chronological order
@@ -71,20 +81,46 @@ def main():
     transcriptFile.close()
 
 
+def reconcileTranscripts(*transcripts):
+    """
+    Given multiple transcripts, returns a generate that includes any message exactly once
+    removing duplicates across transcripts
+    """
+    seenIds = set()
+    for transcript in transcripts:
+        for message in transcript:
+            if message['id'] not in seenIds:
+                seenIds.add(message['id'])
+                yield message
+
+
 def loadTranscript(transcriptFileName):
     """
     Load a transcript file by name
     """
-    try:
-        transcriptFile = open(transcriptFileName)
-        transcript = json.load(transcriptFile)
-        transcriptFile.close()
-    except IOError:  # ignore FileNotFound, since that's a valid case for this tool
-        transcript = []
-    except ValueError:  # handle JSON parsing or empty-file error
-        transcript = []
-        transcriptFile.close()
-    return transcript
+    if os.path.exists(transcriptFileName):
+        with open(transcriptFileName, 'rb') as transcriptFile:
+            try:
+                return json.loads(transcriptFile.read())
+            except ValueError:
+                print 'transcript file had bad json! ignoring'
+                return []
+    return []
+
+
+def loadTempTranscript(tempFileName):
+    """
+    Load a temp transcript file by name
+    """
+    # todo lot of copy/paste from above
+    if os.path.exists(tempFileName):
+        with open(tempFileName, 'rb') as tempFile:
+            try:
+                return [m for line in tempFile.readlines() for m in json.loads(line)]
+            except ValueError:
+                print 'temp file had bad json! ignoring'
+                return []
+    return []
 
 
 def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLimit=None):
