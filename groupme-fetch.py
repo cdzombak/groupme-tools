@@ -87,7 +87,7 @@ oldestId" to continue fetching the past).]
         transcript = []
         transcriptFile.close()
 
-    while (complete is not True):
+    while not complete:
         pageCount = pageCount + 1
         print('starting on page ' + str(pageCount))
 
