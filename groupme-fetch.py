@@ -48,12 +48,16 @@ def main():
     parser.add_argument('accessToken')
     parser.add_argument("--oldest", help="The ID of the oldest (topmost) message in the existing transcript file")
     parser.add_argument("--newest", help="The ID of the newest (bottom-most) message in the existing transcript file")
+    parser.add_argument("--pages", type=int,
+                        help="The number of pages to pull down (defaults to as many as the conversation has")
+
     args = parser.parse_args()
 
     group = args.group
-    accessToken = args.group
+    accessToken = args.accessToken
     beforeId = args.oldest
     stopId = args.newest
+    pages = args.pages
 
     transcriptFileName = 'transcript-{0}.json'.format(group)
     try:
@@ -66,7 +70,7 @@ def main():
         transcript = []
         transcriptFile.close()
 
-    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId)
+    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
 
     # sort transcript in chronological order
     transcript = sorted(transcript, key=lambda k: k[u'created_at'])
@@ -76,10 +80,9 @@ def main():
     transcriptFile.close()
 
 
-def populateTranscript(group, accessToken, transcript, beforeId, stopId):
+def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLimit=None):
     complete = False
     pageCount = 0
-
     endpoint = 'https://v2.groupme.com/groups/' + group + '/messages'
     headers = {
         'Accept': 'application/json, text/javascript',
@@ -92,9 +95,11 @@ def populateTranscript(group, accessToken, transcript, beforeId, stopId):
         'X-Access-Token': accessToken
     }
 
-
     while not complete:
         pageCount = pageCount + 1
+        if pageLimit and pageCount > pageLimit:
+            break
+
         print('starting on page ' + str(pageCount))
 
         if beforeId is not None:
