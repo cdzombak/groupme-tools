@@ -95,43 +95,48 @@ def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLim
         'X-Access-Token': accessToken
     }
 
-    while not complete:
-        pageCount = pageCount + 1
-        if pageLimit and pageCount > pageLimit:
-            break
+    tempFileName = 'temp-transcript-{0}.json'.format(group)
+    with open(tempFileName, 'wb') as tempFile:
+        while not complete:
+            pageCount = pageCount + 1
+            if pageLimit and pageCount > pageLimit:
+                break
 
-        print('starting on page ' + str(pageCount))
+            print('starting on page ' + str(pageCount))
 
-        if beforeId is not None:
-            params = {'before_id': beforeId}
-        else:
-            params = {}
-        r = requests.get(endpoint, params=params, headers=headers)
+            if beforeId is not None:
+                params = {'before_id': beforeId}
+            else:
+                params = {}
+            r = requests.get(endpoint, params=params, headers=headers)
 
-        if r.status_code is not 200:
-            onRequestError(r)
+            if r.status_code is not 200:
+                onRequestError(r)
 
-        response = r.json()
-        messages = response[u'response'][u'messages']
+            response = r.json()
+            messages = response[u'response'][u'messages']
 
-        if stopId is not None:
-            messages = sorted(messages, key=lambda k: k[u'created_at'], reverse=True)
-            for message in messages:
-                if message[u'id'] == stopId:
-                    complete = True
-                    print('Reached ID ' + stopId + "; stopping!")
-                    break
-                else:
-                    transcript.append(message)
-        else:
-            transcript.extend(messages)
+            if stopId is not None:
+                messages = sorted(messages, key=lambda k: k[u'created_at'], reverse=True)
+                for message in messages:
+                    if message[u'id'] == stopId:
+                        complete = True
+                        print('Reached ID ' + stopId + "; stopping!")
+                        break
+                    else:
+                        transcript.append(message)
+            else:
+                transcript.extend(messages)
 
-        if len(messages) is not 20:
-            complete = True
-            print('Reached the end/beginning!')
+            tempFile.write(json.dumps(messages))
+            tempFile.write('\n')
+            if len(messages) is not 20:
+                complete = True
+                print('Reached the end/beginning!')
 
-        # keep working back in time
-        beforeId = messages[-1][u'id']
+            # keep working back in time
+            beforeId = messages[-1][u'id']
+
     return transcript
 
 if __name__ == '__main__':
