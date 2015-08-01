@@ -18,8 +18,6 @@ def onRequestError(request):
 
 def main():
     """
-    Usage: groupme-fetch.py groupId accessToken [oldest oldestId]|[newest newestId]
-
     Writes out "transcript-groupId.json" with the history of the group
     in chronological order.
 
@@ -28,26 +26,17 @@ def main():
     file is in the correct format *and its messages are in chronological
     order*.
 
-    Options for updating/continuing a scrape:
+    The easiest way to continue a scrape is to pass --resumePrevious or --resumeNext
+    which will continue with the scrape moving backwards/forwards.
 
-    [If neither of these options is provided, we scrape from the present
-    until the job is finished (or interrupted in which case, use "oldest
-    oldestId" to continue fetching the past).]
-
-     - If "oldest oldestId" is provided, oldestId is assumed to be the ID
-       of the oldest (topmost) message in the existing transcript file.
-       Messages older than it will be retrieved and added at the top of
-       the file, in order.
-
-     - If "newest newestId" is provided, newestId is assumed to be the ID
-       of the newest (bottom-most) message in the existing transcript file.
-       Messages newer than it will be retrieved and added at the bottom
-       of the file, in order.
+    For more fine grained control you can provide --oldest or --newest flags with
+    specific message IDs
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('group')
     parser.add_argument('accessToken')
-    parser.add_argument("--resume", action='store_true', default=False, help="Resume based on the last found files.")
+    parser.add_argument("--resumePrevious", action='store_true', default=False, help="Resume based on the last found files and get previous messages.")
+    parser.add_argument("--resumeNext", action='store_true', default=False, help="Resume based on the last found files and get next messages.")
     parser.add_argument("--oldest", help="The ID of the oldest (topmost) message in the existing transcript file")
     parser.add_argument("--newest", help="The ID of the newest (bottom-most) message in the existing transcript file")
     parser.add_argument("--pages", type=int,
@@ -63,13 +52,16 @@ def main():
 
     transcriptFileName = 'transcript-{0}.json'.format(group)
     transcript = loadTranscript(transcriptFileName)
-    if args.resume:
+    if args.resumePrevious or args.resumeNext:
         tempFileName = getTempFileName(group)
         tempTranscript = loadTempTranscript(tempFileName)
         transcript = sorted(reconcileTranscripts(transcript, tempTranscript),
                             key=lambda k: k[u'created_at'])
         if transcript:
-            beforeId = transcript[0]['id']
+            if args.resumePrevious:
+                beforeId = transcript[0]['id']
+            else:
+                stopId = transcript[-1]['id']
 
     transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
 
