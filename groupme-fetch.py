@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import sys
 import argparse
@@ -56,7 +57,7 @@ def main():
         tempFileName = getTempFileName(group)
         tempTranscript = loadTempTranscript(tempFileName)
         transcript = sorted(reconcileTranscripts(transcript, tempTranscript),
-                            key=lambda k: k[u'created_at'])
+                            key=lambda k: k['created_at'])
         if transcript:
             if args.resumePrevious:
                 beforeId = transcript[0]['id']
@@ -67,7 +68,11 @@ def main():
 
     # sort transcript in chronological order
     transcript = sorted(transcript, key=lambda k: k[u'created_at'])
-
+    print 'Transcript contains {0} messages from {1} to {2}'.format(
+        len(transcript),
+        datetime.fromtimestamp(transcript[0]['created_at']),
+        datetime.fromtimestamp(transcript[-1]['created_at']),
+    )
     transcriptFile = open(transcriptFileName, 'w+')
     json.dump(transcript, transcriptFile, ensure_ascii=False)
     transcriptFile.close()
