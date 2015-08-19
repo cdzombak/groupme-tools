@@ -1,0 +1,43 @@
+/* Overall container stuff - centered, width, etc. */
+.container {
+    margin: auto;
+    min-width: 720px;
+    width: 60%;
+}
+
+/* "System" messages about events in chat. */
+.system .author {
+    display: none;
+}
+.system .message {
+    font-style: italic;
+    font-size: 12pt;
+}
+
+/* Overall message formatting stuff */
+.chat {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.author {
+    font-size: 11pt;
+    color: grey;
+}
+
+.message {
+    font-size: 14pt;
+}
+
+/* Stuff for showing likes */
+.likes {
+    float:right;
+}
+
+.likes-heart:after {
+    color: red;
+    content: "";
+}
+
+.message-container img {
+    max-width: 100%;
+}
