@@ -62,7 +62,7 @@ class ImageCache(UserDict):
 
     def __getitem__(self, key):
         try:
-            UserDict.__getitem__(self, key)
+            return UserDict.__getitem__(self, key)
         except KeyError:
             local = self._save_image(key)
             self[key] = local
