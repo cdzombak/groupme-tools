@@ -2,7 +2,7 @@
 
 Tools to fetch the complete history of a GroupMe group chat and analyze it.
 
-`groupme-fetch.py` allows you to grab the entire transcript for one of your groups and save it as JSON for backup and analysis. It is documented; run it with --help for help. It also allows you to fetch recent updates in the group to keep your JSON file up to date.
+`groupme-fetch.py` allows you to grab the entire transcript for one of your groups and save it as JSON for backup and analysis. It is documented; run it with `--help` for help. It also allows you to fetch recent updates in the group to keep your JSON file up to date.
 
 `simple-transcript.py` processes a JSON file into a human-readable text transcript.
 
