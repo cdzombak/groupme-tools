@@ -1,7 +1,8 @@
 # request logs used for RE and debugging
 /request_logs/*
 
-# my own transcripts
+# my own transcripts and temp files
+temp-transcript-*.json
 transcript-*.json
 transcript-*.txt
 transcript-*.bak

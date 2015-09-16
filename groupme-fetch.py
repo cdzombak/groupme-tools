@@ -1,9 +1,12 @@
+from datetime import datetime
+import os
 import sys
+import argparse
+
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
 import requests
-import time
 import json
 
 
@@ -15,55 +18,111 @@ def onRequestError(request):
 
 
 def main():
-    """Usage: groupme-fetch.py groupId accessToken [oldest oldestId]|[newest newestId]
-
-Writes out "transcript-groupId.json" with the history of the group
-in chronological order.
-
-If a file by that name is found, we'll go ahead and update that
-scrape depending on the options you provide. It is assumed that the
-file is in the correct format *and its messages are in chronological
-order*.
-
-Options for updating/continuing a scrape:
-
-[If neither of these options is provided, we scrape from the present
-until the job is finished (or interrupted in which case, use "oldest
-oldestId" to continue fetching the past).]
-
- - If "oldest oldestId" is provided, oldestId is assumed to be the ID
-   of the oldest (topmost) message in the existing transcript file.
-   Messages older than it will be retrieved and added at the top of
-   the file, in order.
-
- - If "newest newestId" is provided, newestId is assumed to be the ID
-   of the newest (bottom-most) message in the existing transcript file.
-   Messages newer than it will be retrieved and added at the bottom
-   of the file, in order.
     """
+    Writes out "transcript-groupId.json" with the history of the group
+    in chronological order.
 
-    if len(sys.argv) is not 3 and len(sys.argv) is not 5:
-        print(main.__doc__)
-        sys.exit(1)
+    If a file by that name is found, we'll go ahead and update that
+    scrape depending on the options you provide. It is assumed that the
+    file is in the correct format *and its messages are in chronological
+    order*.
 
-    beforeId = None
-    stopId = None
+    The easiest way to continue a scrape is to pass --resumePrevious or --resumeNext
+    which will continue with the scrape moving backwards/forwards.
 
-    if len(sys.argv) is 5:
-        if sys.argv[3] == 'oldest':
-            beforeId = sys.argv[4]
-        elif sys.argv[3] == 'newest':
-            stopId = sys.argv[4]
-        else:
-            print(main.__doc__)
-            sys.exit(1)
+    For more fine grained control you can provide --oldest or --newest flags with
+    specific message IDs
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('group')
+    parser.add_argument('accessToken')
+    parser.add_argument("--resumePrevious", action='store_true', default=False, help="Resume based on the last found files and get previous messages.")
+    parser.add_argument("--resumeNext", action='store_true', default=False, help="Resume based on the last found files and get next messages.")
+    parser.add_argument("--oldest", help="The ID of the oldest (topmost) message in the existing transcript file")
+    parser.add_argument("--newest", help="The ID of the newest (bottom-most) message in the existing transcript file")
+    parser.add_argument("--pages", type=int,
+                        help="The number of pages to pull down (defaults to as many as the conversation has")
 
-    group = sys.argv[1]
-    accessToken = sys.argv[2]
+    args = parser.parse_args()
 
+    group = args.group
+    accessToken = args.accessToken
+    beforeId = args.oldest
+    stopId = args.newest
+    pages = args.pages
+
+    transcriptFileName = 'transcript-{0}.json'.format(group)
+    transcript = loadTranscript(transcriptFileName)
+    if args.resumePrevious or args.resumeNext:
+        tempFileName = getTempFileName(group)
+        tempTranscript = loadTempTranscript(tempFileName)
+        transcript = sorted(reconcileTranscripts(transcript, tempTranscript),
+                            key=lambda k: k['created_at'])
+        if transcript:
+            if args.resumePrevious:
+                beforeId = transcript[0]['id']
+            else:
+                stopId = transcript[-1]['id']
+
+    transcript = populateTranscript(group, accessToken, transcript, beforeId, stopId, pages)
+
+    # sort transcript in chronological order
+    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
+    print 'Transcript contains {0} messages from {1} to {2}'.format(
+        len(transcript),
+        datetime.fromtimestamp(transcript[0]['created_at']),
+        datetime.fromtimestamp(transcript[-1]['created_at']),
+    )
+    transcriptFile = open(transcriptFileName, 'w+')
+    json.dump(transcript, transcriptFile, ensure_ascii=False)
+    transcriptFile.close()
+
+
+def reconcileTranscripts(*transcripts):
+    """
+    Given multiple transcripts, returns a generate that includes any message exactly once
+    removing duplicates across transcripts
+    """
+    seenIds = set()
+    for transcript in transcripts:
+        for message in transcript:
+            if message['id'] not in seenIds:
+                seenIds.add(message['id'])
+                yield message
+
+
+def loadTranscript(transcriptFileName):
+    """
+    Load a transcript file by name
+    """
+    if os.path.exists(transcriptFileName):
+        with open(transcriptFileName, 'rb') as transcriptFile:
+            try:
+                return json.loads(transcriptFile.read())
+            except ValueError:
+                print 'transcript file had bad json! ignoring'
+                return []
+    return []
+
+
+def loadTempTranscript(tempFileName):
+    """
+    Load a temp transcript file by name
+    """
+    # todo lot of copy/paste from above
+    if os.path.exists(tempFileName):
+        with open(tempFileName, 'rb') as tempFile:
+            try:
+                return [m for line in tempFile.readlines() for m in json.loads(line)]
+            except ValueError:
+                print 'temp file had bad json! ignoring'
+                return []
+    return []
+
+
+def populateTranscript(group, accessToken, transcript, beforeId, stopId, pageLimit=None):
     complete = False
     pageCount = 0
-
     endpoint = 'https://v2.groupme.com/groups/' + group + '/messages'
     headers = {
         'Accept': 'application/json, text/javascript',
@@ -76,58 +135,53 @@ oldestId" to continue fetching the past).]
         'X-Access-Token': accessToken
     }
 
-    transcriptFileName = 'transcript-' + group + '.json'
-    try:
-        transcriptFile = open(transcriptFileName)
-        transcript = json.load(transcriptFile)
-        transcriptFile.close()
-    except IOError:  # ignore FileNotFound, since that's a valid case for this tool
-        transcript = []
-    except ValueError:  # handle JSON parsing or empty-file error
-        transcript = []
-        transcriptFile.close()
+    tempFileName = getTempFileName(group)
+    with open(tempFileName, 'wb') as tempFile:
+        while not complete:
+            pageCount = pageCount + 1
+            if pageLimit and pageCount > pageLimit:
+                break
 
-    while (complete is not True):
-        pageCount = pageCount + 1
-        print('starting on page ' + str(pageCount))
+            print('starting on page ' + str(pageCount))
 
-        if beforeId is not None:
-            params = {'before_id': beforeId}
-        else:
-            params = {}
-        r = requests.get(endpoint, params=params, headers=headers)
+            if beforeId is not None:
+                params = {'before_id': beforeId}
+            else:
+                params = {}
+            r = requests.get(endpoint, params=params, headers=headers)
 
-        if r.status_code is not 200:
-            onRequestError(r)
+            if r.status_code is not 200:
+                onRequestError(r)
 
-        response = r.json()
-        messages = response[u'response'][u'messages']
+            response = r.json()
+            messages = response[u'response'][u'messages']
 
-        if stopId is not None:
-            messages = sorted(messages, key=lambda k: k[u'created_at'], reverse=True)
-            for message in messages:
-                if message[u'id'] == stopId:
-                    complete = True
-                    print('Reached ID ' + stopId + "; stopping!")
-                    break
-                else:
-                    transcript.append(message)
-        else:
-            transcript.extend(messages)
+            if stopId is not None:
+                messages = sorted(messages, key=lambda k: k[u'created_at'], reverse=True)
+                for message in messages:
+                    if message[u'id'] == stopId:
+                        complete = True
+                        print('Reached ID ' + stopId + "; stopping!")
+                        break
+                    else:
+                        transcript.append(message)
+            else:
+                transcript.extend(messages)
 
-        if len(messages) is not 20:
-            complete = True
-            print('Reached the end/beginning!')
+            tempFile.write(json.dumps(messages))
+            tempFile.write('\n')
+            if len(messages) is not 20:
+                complete = True
+                print('Reached the end/beginning!')
 
-        # keep working back in time
-        beforeId = messages[-1][u'id']
+            # keep working back in time
+            beforeId = messages[-1][u'id']
 
-    # sort transcript in chronological order
-    transcript = sorted(transcript, key=lambda k: k[u'created_at'])
+    return transcript
 
-    transcriptFile = open(transcriptFileName, 'w+')
-    json.dump(transcript, transcriptFile, ensure_ascii=False)
-    transcriptFile.close()
+
+def getTempFileName(group):
+    return 'temp-transcript-{0}.json'.format(group)
 
 
 if __name__ == '__main__':
