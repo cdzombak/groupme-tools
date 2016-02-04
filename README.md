@@ -1,5 +1,7 @@
 # groupme-tools
 
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 Tools to fetch the complete history of a GroupMe group chat and analyze it.
 
 `groupme-fetch.py` allows you to grab the entire transcript for one of your groups and save it as JSON for backup and analysis. It is documented; run it with `--help` for help. It also allows you to fetch recent updates in the group to keep your JSON file up to date.
@@ -10,6 +12,8 @@ The files in the `stat` folder are self-explanatory; they allow for learning int
 
 ## Finding your access token
 
+**nb. there are better ways to do this now; see [GroupMe API docs](https://dev.groupme.com/docs/v3).**
+
 Log into [GroupMe's web interface](https://web.groupme.com/groups) and use Chrome or Safari's inspector to monitor the network requests when you load one of your groups.
 
 You'll notice a GET request to an endpoint `https://v2.groupme.com/groups/GROUP_ID/messages`.
@@ -17,6 +21,8 @@ You'll notice a GET request to an endpoint `https://v2.groupme.com/groups/GROUP_
 One of the headers sent with that request, `X-Access-Token`, is your access token.
 
 ## Finding your group ID
+
+**nb. there are better ways to do this now; see [GroupMe API docs](https://dev.groupme.com/docs/v3).**
 
 Again, in GroupMe's web interface, the group ID is the numeric ID included in the group's URL (`https://web.groupme.com/groups/GROUP_ID`).
 
